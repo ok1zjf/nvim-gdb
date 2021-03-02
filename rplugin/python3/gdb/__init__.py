@@ -186,11 +186,16 @@ class Gdb(Common):
         """
         try:
             obj = self._get_app()
+            # print('obj:', obj)
+            # print('args:',args)
+            self.logger.info("GdbCall args=%s", args)
             if obj:
                 for name in args[0].split('.'):
                     obj = getattr(obj, name)
                 if callable(obj):
+                    self.logger.info("GdbCall return0=%s", obj)
                     return obj(*args[1:])
+                self.logger.info("GdbCall return1=%s", obj)
                 return obj
         except Exception:
             self.logger.exception('GdbCall Exception')
@@ -205,6 +210,49 @@ class Gdb(Common):
     def gdb_create_watch(self, args):
         """Handle command GdbCreateWatch."""
         return self.gdb_call(["create_watch"] + args)
+
+    @pynvim.function('GdbShowLocals', sync=True)
+    def gdb_show_locals(self, _):
+        return self.gdb_call(["show_locals", "none"])
+
+    @pynvim.function('GdbSaveBreaks', sync=True)
+    def gdb_save_breaks(self, _):
+        """Handle command GdbSaveBreaks."""
+        obj = self._get_app()
+        if obj.backend_name == 'pdb':
+            msg = self.gdb_call(["custom_command", "b"])
+            lines = msg.split('\n')
+            i = 0
+
+            breaks = []
+            while i < len(lines):
+                line = lines[i]
+                ts = line.split(' ')
+                ts = [ v.strip() for v in ts if v.strip() != '']
+                if len(ts)<3:
+                    break
+
+                if ts[1] == 'breakpoint':
+                    b = 'break '+' '.join(ts[5:])
+                    breaks.append(b)
+
+                if ' '.join(ts[:3]) == 'stop only if':
+                    cond = ' '.join(ts[3:])
+                    b = breaks[-1]+', '+cond
+                    breaks[-1] = b
+
+                i += 1
+
+            with open(".pdbrc", "wt") as pdbrc:
+                pdbrc.write('\n'.join(breaks))
+            return 'Breakpoints saved.' 
+
+        if obj.backend_name == 'gdb':
+            msg = self.gdb_call(["custom_command", "save breakpoints breaks"])
+            return msg
+
+        return None
+
 
     @pynvim.function('GdbTestPeek', sync=True)
     def gdb_test_peek(self, args):

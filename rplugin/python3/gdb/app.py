@@ -42,6 +42,7 @@ class App(Common):
             "lldb": Lldb,
             "pdb": Pdb,
         }
+        self.backend_name = backendStr
         self.backend = backend_maps[backendStr]()
 
         # Initialize current line tracking
@@ -126,13 +127,21 @@ class App(Common):
         """Execute a custom debugger command and return its output."""
         return self.proxy.query("handle-command " + cmd)
 
+    def show_locals(self, cmd):
+        if self.backend_name == 'pdb':
+            self.create_watch('import dnice; dnice.dnice(locals())')
+        elif self.backend_name == 'gdb':
+            self.create_watch('info locals')
+        return
+
     def create_watch(self, cmd):
         """Create a window to watch for a debugger expression.
 
         The output of the expression or command will be displayed
         in that window.
         """
-        self.vim.command("vnew | set readonly buftype=nowrite")
+        # self.vim.command("vnew | set readonly buftype=nowrite")
+        self.vim.command("wincmd k | vnew | wincmd r | vertical resize -20 | set readonly buftype=nowrite")
         self.keymaps.dispatch_set()
         buf = self.vim.current.buffer
         buf.name = cmd
@@ -140,12 +149,20 @@ class App(Common):
         cur_tabpage = self.vim.current.tabpage.number
         augroup_name = f"NvimGdbTab{cur_tabpage}_{buf.number}"
 
-        self.vim.command(f"augroup {augroup_name}")
-        self.vim.command("autocmd!")
-        self.vim.command("autocmd User NvimGdbQuery"
-                         f" call nvim_buf_set_lines({buf.number}, 0, -1, 0,"
-                         f" split(GdbCustomCommand('{cmd}'), '\\n'))")
-        self.vim.command("augroup END")
+        if self.backend_name == 'pdb':
+            self.vim.command(f"augroup {augroup_name}")
+            self.vim.command("autocmd!")
+            self.vim.command("autocmd User NvimGdbQuery"
+                             f" call nvim_buf_set_lines({buf.number}, 0, -1, 0,"
+                             f" split(GdbCustomCommand('{cmd}')[1:-2], '\\\\n'))")
+            self.vim.command("augroup END")
+        else:
+            self.vim.command(f"augroup {augroup_name}")
+            self.vim.command("autocmd!")
+            self.vim.command("autocmd User NvimGdbQuery"
+                             f" call nvim_buf_set_lines({buf.number}, 0, -1, 0,"
+                             f" split(GdbCustomCommand('{cmd}'), '\\n'))")
+            self.vim.command("augroup END")
 
         # Destroy the autowatch automatically when the window is gone.
         self.vim.command("autocmd BufWinLeave <buffer> call"
@@ -153,8 +170,9 @@ class App(Common):
         # Destroy the watch buffer.
         self.vim.command("autocmd BufWinLeave <buffer> call timer_start(100,"
                          f" {{ -> execute('bwipeout! {buf.number}') }})")
+        
         # Return the cursor to the previous window
-        self.vim.command("wincmd l")
+        self.vim.command("wincmd j")
 
     def breakpoint_toggle(self):
         """Toggle breakpoint in the cursor line."""

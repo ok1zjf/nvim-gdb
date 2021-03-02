@@ -50,6 +50,8 @@ function! nvimgdb#GlobalInit()
   command! -nargs=1 GdbCreateWatch call GdbCreateWatch(<q-args>)
   command! GdbLopenBacktrace call GdbCallAsync('lopen', 'backtrace', '<mods>')
   command! GdbLopenBreakpoints call GdbCallAsync('lopen', 'breakpoints', '<mods>')
+  command! GdbSaveBreaks call GdbSaveBreaks()
+  command! GdbShowLocals call GdbShowLocals()
 
   augroup NvimGdb
     au!
