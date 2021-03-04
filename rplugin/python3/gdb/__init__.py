@@ -245,7 +245,7 @@ class Gdb(Common):
 
             with open(".pdbrc", "wt") as pdbrc:
                 pdbrc.write('\n'.join(breaks))
-            return 'Breakpoints saved.' 
+            return 'Breakpoints saved. Num: '+str(len(breaks)) 
 
         if obj.backend_name == 'gdb':
             msg = self.gdb_call(["custom_command", "save breakpoints breaks"])

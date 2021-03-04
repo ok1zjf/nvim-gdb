@@ -141,7 +141,7 @@ class App(Common):
         in that window.
         """
         # self.vim.command("vnew | set readonly buftype=nowrite")
-        self.vim.command("wincmd k | vnew | wincmd r | vertical resize -20 | set readonly buftype=nowrite")
+        self.vim.command("wincmd k | vnew | wincmd r | vertical resize -30 | set readonly buftype=nowrite")
         self.keymaps.dispatch_set()
         buf = self.vim.current.buffer
         buf.name = cmd

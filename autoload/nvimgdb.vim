@@ -72,6 +72,7 @@ function! nvimgdb#GlobalInit()
     au User NvimGdbStart ""
     au User NvimGdbCleanup ""
   augroup END
+
 endfunction
 
 "Shared global state cleanup after the last session ended
