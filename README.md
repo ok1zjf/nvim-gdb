@@ -34,7 +34,7 @@ Check the prerequisites in the script [test/prerequisites.sh](https://github.com
 If you use vim-plug, add the following line to your vimrc file:
 
 ```vim
-Plug 'sakhnik/nvim-gdb', { 'do': ':!./install.sh' }
+Plug 'ok1zjf/nvim-gdb', { 'do': ':!./install.sh' }
 ```
 
 **NOTE**: Make sure to run `:UpdateRemotePlugins` and restart the editor
