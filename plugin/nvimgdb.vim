@@ -21,3 +21,11 @@ if !exists('g:nvimgdb_disable_start_keymaps') || !g:nvimgdb_disable_start_keymap
   nnoremap <leader>dp :GdbStartPDB python3 -m pdb ./%
   nnoremap <leader>db :GdbStartBashDB bashdb main.sh
 endif
+
+" Part of the support for offline breakpoints
+let g:gdb_highlight_group='debug'
+let g:gdb_breakpoint_symbol='*'
+let g:gdb_sign_name='gdbbp'
+execute 'sign' 'define' g:gdb_sign_name 'text='.g:gdb_breakpoint_symbol 'texthl='.g:gdb_highlight_group
+
+

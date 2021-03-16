@@ -184,6 +184,8 @@ class App(Common):
         line_nr = self.vim.call("line", ".")
         breaks = self.breakpoint.get_for_file(file_name, line_nr)
 
+        self.logger.info("Toggling Break: %s   %s", file_name, line_nr)
+
         if breaks:
             # There already is a breakpoint on this line: remove
             del_br = self._get_command('delete_breakpoints')
@@ -232,11 +234,14 @@ class App(Common):
 
     def on_buf_leave(self):
         """Actions to execute when a buffer is left."""
+        self.logger.info("on_buf_leave")
         if self.vim.current.buffer.options['buftype'] == 'terminal':
             # Move the cursor to the end of the buffer
+            self.logger.info("on_buf_leave. Moving cursor to the end of buffer")
             self.vim.command("$")
             return
         if self.win.is_jump_window_active():
+            self.logger.info("on_buf_leave. Calling dispatch_unset()")
             self.keymaps.dispatch_unset()
 
     def lopen(self, kind, mods):

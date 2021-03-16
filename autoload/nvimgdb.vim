@@ -1,6 +1,15 @@
 
 let s:plugin_dir = expand('<sfile>:p:h:h')
 
+function GdbStop()
+  " Move to the nvimgdb terminal window first. 
+  " If the GdbpDebugStop is called from other windows the nvim-gdb
+  " key-mappings will not get released!
+  :execute bufwinnr("nvimgdb") 'wincmd w'
+  :GdbDebugStop
+endfunction
+
+
 function! nvimgdb#GetPluginDir()
   return s:plugin_dir
 endfunction

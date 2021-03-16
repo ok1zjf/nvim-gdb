@@ -36,6 +36,7 @@ class Keymaps(Common):
         for mode, key, cmd in Keymaps.default:
             try:
                 keystroke = self.config.get_or(key, None)
+                self.logger.info(f'Mapping key->cmd: {keystroke} -> {cmd}     Mode:{mode}')
                 if keystroke is not None:
                     self.vim.command(
                         f'{mode}noremap <buffer> <silent> {keystroke}'
@@ -48,6 +49,7 @@ class Keymaps(Common):
         for mode, key, _ in Keymaps.default:
             try:
                 keystroke = self.config.get_or(key, None)
+                self.logger.info(f'Removing mapping key: {keystroke}')
                 if keystroke is not None:
                     self.vim.command(f'{mode}unmap <buffer> {keystroke}')
             except Exception:
@@ -68,6 +70,7 @@ class Keymaps(Common):
             try:
                 keystroke = self.config.get_or(key, None)
                 if keystroke is not None:
+                    self.logger.info(f'Terml Local Mapping key->cmd: {keystroke} -> {cmd}')
                     self.vim.command(f'tnoremap <buffer> <silent> {keystroke}'
                                      rf' <c-\><c-n>{cmd}<cr>i')
             except Exception:
