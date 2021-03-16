@@ -14,7 +14,7 @@ from gdb.config import Config
 from gdb.logger import LOGGING_CONFIG
 from gdb.efmmgr import EfmMgr
 
-# import neovim
+import neovim
 
 @pynvim.plugin
 class Gdb(Common):
