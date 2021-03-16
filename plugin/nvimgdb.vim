@@ -5,8 +5,9 @@ let g:loaded_nvimgdb = 1
 
 function! s:Spawn(backend, proxy_cmd, client_cmd)
   "Expand words in the client_cmd to support %, <word> etc
-  let cmd=a:client_cmd
+  "let cmd=a:client_cmd
   let cmd = join(map(split(a:client_cmd, "/"), {k, v -> expand(v)}), "/")
+  "let cmd = join(map(split(a:client_cmd), {k, v -> expand(v)}))
   call GdbInit(a:backend, a:proxy_cmd, cmd)
 endfunction
 
