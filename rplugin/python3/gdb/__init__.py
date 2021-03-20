@@ -311,29 +311,75 @@ class Gdb(Common):
             for line in f:
                 self.logger.info("line: %s", line)
                 line = line.strip()
+
+                # get the break id
+                # toks = line.split(',')
+                # breakid=''
+                # if len(toks) > 1: 
+                    # line = toks[0]
+                    # breakid = toks[1]
+
                 toks = line.split(' ')
                 if len(toks) < 2 and toks[0].strip() != 'break':
                     continue
                 toks = ' '.join(toks[1:])
-                break_name = toks
+                # break_name = toks
                 toks = toks.split(':')
                 if len(toks) < 2:
                     continue
                 filename = ' '.join(toks[:-1])
                 line_nr = int(toks[-1])
+                sign_id = line_nr*10
 
-                self.breakpoints[break_name] = [filename, line_nr]
+                self.breakpoints[sign_id] = [filename, line_nr, sign_id]
         return
 
     def save_breakpoints(self):
         breaks = []
         for n, v in self.breakpoints.items():
-            b = 'break '+n
+            b = 'break '+v[0]+":"+str(v[1])
+            # sign_id = str(v[2])
+            # if sign_id != '':
+                # b += ','+sign_id
             breaks.append(b)
 
         with open(".pdbrc", "wt") as pdbrc:
             pdbrc.write('\n'.join(breaks))
         return
+
+    @neovim.command("GdbSyncBreakpoints", sync=False)
+    def sync_breakpoints_cmd(self, buffname=None):
+        # if not buffname:
+            # buffname = self.cbname()
+
+        signs = self.vim.command_output('sign place')
+        lines = signs.split('\n')
+        if len(lines)<2:
+            return
+
+        self.logger.info("Updating breakpoints: %d", len(lines)-1)
+        for line in lines:
+            toks = line.split(' ')
+            place = {}
+            for tok in toks:
+                stoks = tok.split('=')
+                if len(stoks) == 2:
+                    place[stoks[0].strip()] = stoks[1].strip() 
+
+            # Synchronize breakpoint
+            if 'line' in place and 'id' in place:
+                sign_id = int(place['id'])
+                line_num = int(place['line'])
+                line_num_old = self.breakpoints[sign_id][1]
+                if line_num != line_num_old:
+                    self.logger.info("Line changed: %s ->  %s", line_num_old, line_num)
+                    self.breakpoints[sign_id][1] = line_num
+
+        self.save_breakpoints()
+        # TODO: update breakpoints in pdb
+
+        return
+
 
     @neovim.command("GdbLoadBreakpoints", sync=False)
     def set_breakpoints_cmd(self, buffname=None):
@@ -346,14 +392,20 @@ class Gdb(Common):
         self.vim.command('sign unplace * file={}'.format(buffname))
         # show breakpoints
         for n, v in self.breakpoints.items():
-            filename, line_nr = v
+            filename, line_nr, sign_id = v
             if buffname == filename:
                 self.logger.info("Setting Break: %s   %s", buffname, line_nr)
-                sign_id = 10 * line_nr
+                # sign_id = 10 * line_nr
                 self.vim.command('sign place {} line={} name={} file={}'.format(
                     sign_id, line_nr, self.vim.eval('g:gdb_sign_name'), buffname)
                 )
         return
+
+    def get_break_id(self, buffname, line_num):
+        for n,v in self.breakpoints.items():
+            if v[0] == buffname and v[1] == line_num:
+                return n
+        return -1
 
     @neovim.command("GdbABreak", sync=False)
     def toggle_breakpoint_cmd(self, buffname=None):
@@ -361,17 +413,18 @@ class Gdb(Common):
             buffname = self.cbname()
 
         row = self.vim.current.window.cursor[0]
-        break_name = buffname+":"+str(row)
+        # break_name = buffname+":"+str(row)
         # self.logger.info("Break toggle %s   %s", buffname, row)
 
-        sign_id = 10 * row
-        if break_name in self.breakpoints:
+        sign_id = self.get_break_id(buffname, row)
+        if sign_id >= 0:
             self.logger.info("Removing Break: %s   %s", buffname, row)
-            del self.breakpoints[break_name]
+            del self.breakpoints[sign_id]
             self.vim.command('sign unplace {} file={}'.format(sign_id, buffname))
         else:
-            self.logger.info("Setting Break: %s   %s", buffname, row)
-            self.breakpoints[break_name] = row
+            sign_id = 10 * row
+            self.logger.info("Setting Break: %s   %s  %s", buffname, row, sign_id)
+            self.breakpoints[sign_id] = [buffname.strip(), row, sign_id]
             self.vim.command('sign place {} line={} name={} file={}'.format(
                 sign_id, row, self.vim.eval('g:gdb_sign_name'), buffname)
             )
